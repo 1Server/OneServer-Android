@@ -1,0 +1,34 @@
+<resources>
+
+    <string name="app_name">One Server Client</string>
+    <string name="title_section3">Pictures</string>
+    <string name="title_section2">Music</string>
+    <string name="title_section1">Video</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="media_temp_text">This is Media Object Info!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_main_screen">MainActivityListView</string>
+    <string name="title_activity_main_screen_activity_list_view">One Server Client</string>
+    <string name="title_activity_file_structure_list_fragment">FileStructureListFragment</string>
+    <string name="button_play">Play</string>
+    <string name="button_pause">Pause</string>
+    <string name="button_stop">Stop</string>
+    <string name="media_button_layout_description">Layout of Buttons that control the media in the media player.</string>
+    <string name="title_activity_media_player">One Server Media Player</string>
+    <string name ="media_info_select_button">Select</string>
+    <string name="menu_gridview">Grid View</string>
+    <string name="menu_listview">List View</string>
+	<string name ="main_menu_browse_button">Browse</string>
+	<string name ="main_menu_synch_button">Sync</string>
+	<string name ="main_menu_search_button">Search</string>
+	<string name ="main_menu_connect_button">Connect</string>
+	<string name ="empty_list">No Devices Found</string>
+	<string name ="not_connected">Not Connected</string>
+	<string name ="refresh">Refresh</string>
+	<string name ="upload_files">Select Local Files:</string>
+	<string name ="upload_destination">Select Destination:</string>
+	<string name ="select_button">Select</string>
+	<string name ="upload_button">Upload</string>
+
+	
+</resources>

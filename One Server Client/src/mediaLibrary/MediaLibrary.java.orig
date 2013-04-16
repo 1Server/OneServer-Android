@@ -1,0 +1,184 @@
+package mediaLibrary;
+
+import java.util.ArrayList;
+import java.util.TreeMap;
+
+import android.graphics.Bitmap;
+
+import network.ContentDirectoryCallback;
+import network.NetworkManager;
+
+import fileStructure.Audio;
+import fileStructure.Directory;
+import fileStructure.Folder;
+import fileStructure.Image;
+import fileStructure.MediaObject;
+import fileStructure.MusicTrack;
+import fileStructure.Video;
+
+/**
+ * This class will handle the clients access to the media library. For now just add methods needed get the list view file structure working.
+ * @author kuszewskij
+ *
+ *@version 2 Added stubs for methods needed to navigate through a file structure.
+ */
+public class MediaLibrary implements ContentDirectoryCallback{
+
+	/**
+	 * The one instance of the media library
+	 */
+	private static MediaLibrary mediaLib;
+
+	/**
+	 * This will be the search types that are supported for searching through the server.
+	 * @author kuszewskij
+	 *
+	 */
+	public enum searchTypes{
+		//TODO: add search types.
+	};
+
+	//TODO: For now this will jest hold a set of mock directories to test with. Eventually each directory will be retrieved from the media library
+	private TreeMap<String, Directory> tempData = new TreeMap<String, Directory>(); 
+
+	/**
+	 * Private Constructor.
+	 */
+	private MediaLibrary(){
+		mediaLib = this;
+
+		//TODO: remove once we start getting actual data.
+//		setUpTempData();
+	}
+
+	/**
+	 * Singleton constructor for the media Library. 
+	 * @return
+	 */
+	public static MediaLibrary getMediaLibrary(){
+		if(mediaLib == null){
+			mediaLib = new MediaLibrary();
+		}
+
+		return mediaLib;
+	}
+
+	/**
+	 * Calling this method will return the requested directory.
+	 * @param name The name of the directory to be returned
+	 * @return The directory with the given name.
+	 */
+	public void getDirectory(String name, ContentDirectoryCallback c){
+		//TODO: Implement to get actual data from the server.
+		if(tempData.get(name)==null){
+			try {
+				NetworkManager.getNetworkManager().getContentDirectoryService().getMediaObjectFromServer(name, c);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}else{
+			c.directoryRecieved(tempData.get(name));
+		}
+	}
+
+	/**
+	 * checks to see if a directory is cached or not.
+	 * TODO: Implement. Also, should this be done here or in the Directory class.
+	 * @return
+	 */
+	public boolean isDirectoryCached(Directory d){
+		return false;
+	}
+
+	/**
+	 * checks to see if a mediaObject is cached or not.
+	 * TODO: Implement
+	 * @return
+	 */
+	public boolean isMediaObjectCached(MediaObject mo){
+		return false;
+	}
+
+	/**
+	 * This method will be responsible for creating and returning a directory of media objects fitting the search criteria given on the media server.
+	 * @param type The type of search
+	 * @param query The query information.
+	 * @return A directory containing all of the media objects fitting the search criteria.
+	 */
+	public Directory search(searchTypes type, String query){
+		
+		
+		return null;
+	}
+
+	/**
+	 * TODO: This method is temporary
+	 * This method is temporary and just used to create a fake file strucutre to pull from 
+	 * to see if the ListFileView can pull stuff out and navigate correctly.
+	 */
+	private void setUpTempData(){
+		//set Up the parent directory.
+		ArrayList<MediaObject> rootObjects = new ArrayList<MediaObject>();
+		Folder folder = new Folder("Music", "Music", null, null, "Music", null);
+		folder.directory = "Music";
+		rootObjects.add(folder);
+
+		folder = new Folder("Movies", "Movies", null, null, "Movies", null);
+		folder.directory = "Movies";
+		rootObjects.add(folder);
+
+		folder = new Folder("Images", "Images", null, null, "Images", null);
+		folder.directory = "Images";
+		rootObjects.add(folder);
+
+		Directory root = new Directory("Home",null, rootObjects);
+		tempData.put(root.getName(), root);
+
+		ArrayList<MediaObject> musicObjects = new ArrayList<MediaObject>();
+		musicObjects.add(new MusicTrack("musicTrack", "123d1f", "dd123", "creator names", "flying space ninjas", null, "This is the description", null, "Languages", "LongDescription", null, null, null, null, null, null, null, null, null, "7/1/2499"));
+		//		musicObjects.add(new Audio("song 1","3:32",null,"2012","4", null, "Flying Space Ninjas", new ArrayList<String>(){{add("Pirate");}}, null, null, new ArrayList<String>(){{add("Metal");}}, "2mb", null));
+		//		musicObjects.add(new Audio("song 2", "3:14", null, "4124", "2", null, null, null, null, null, null, null, null));
+		//		musicObjects.add(new Audio("song 3", "6:14", null, "1991", "1", null, null, null, null, null, null, null, null));
+		//		musicObjects.add(new Audio("song 4", "2:42", null, "4194", null, null, null, null, null));
+		//		folder = new Folder("secret Ninja folder");
+		//		folder.directory = "secret Ninja folder";
+		//		musicObjects.add(folder);
+		Directory music = new Directory("Music","Home",musicObjects);
+		tempData.put("secret Ninja folder", new Directory("secret Ninja folder",music.getName(),new ArrayList<MediaObject>()));
+		tempData.put(music.getName(), music);
+		//		
+		//		ArrayList<MediaObject> videoObjects = new ArrayList<MediaObject>();
+		//		videoObjects.add(new Video("video 1", null, null, null, null, null, null, null));
+		//		videoObjects.add(new Video("video 2", null, null, null, null, null, null, null));
+		//		videoObjects.add(new Video("video 3", null, null, null, null, null, null, null));
+		//		videoObjects.add(new Video("video 4", null, null, null, null, null, null, null));
+		//		Directory video = new Directory("Movies","Home",videoObjects);
+		//		tempData.put(video.getName(), video);
+		//		
+		//		ArrayList<MediaObject> imageObjects = new ArrayList<MediaObject>();
+		//		Image image1 = new Image("image 1", null, null, null, null);
+		//		image1.setLocation("http://images1.wikia.nocookie.net/__cb20090410192245/starcraft/images/2/2c/DomMarineCorps_SC1_Logo1.jpg");
+		//		imageObjects.add(image1);
+		//		
+		//		Image image2 = new Image("image 2", null, null, null, null);
+		//		image2.setLocation("http://thingstolookathigh.com/wp-content/uploads/2011/04/Stunning_Mountain_Landscape.jpg");
+		//		imageObjects.add(image2);
+		//		
+		//		imageObjects.add(new Image("image 3", null, null, null, null));
+		//		imageObjects.add(new Image("image 4", null, null, null, null));
+		//		Directory images = new Directory("Images","Home",imageObjects);
+		//		tempData.put(images.getName(), images);
+	}
+
+	@Override
+	public void mediaObjectRecieved(MediaObject object) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void directoryRecieved(Directory d) {
+		// TODO Auto-generated method stub
+
+	}
+}

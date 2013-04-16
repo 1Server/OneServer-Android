@@ -1,0 +1,284 @@
+package network;
+
+import java.util.ArrayList;
+import java.util.Map;
+
+import org.teleal.cling.controlpoint.SubscriptionCallback;
+import org.teleal.cling.model.action.ActionInvocation;
+import org.teleal.cling.model.gena.CancelReason;
+import org.teleal.cling.model.gena.GENASubscription;
+import org.teleal.cling.model.message.UpnpResponse;
+import org.teleal.cling.model.meta.RemoteDevice;
+import org.teleal.cling.model.meta.RemoteService;
+import org.teleal.cling.model.state.StateVariableValue;
+import org.teleal.cling.model.types.ServiceId;
+import org.teleal.cling.model.types.UDAServiceId;
+import org.teleal.cling.support.contentdirectory.callback.Browse;
+import org.teleal.cling.support.model.BrowseFlag;
+import org.teleal.cling.support.model.DIDLContent;
+import org.teleal.cling.support.model.container.Container;
+import org.teleal.cling.support.model.container.StorageFolder;
+import org.teleal.cling.support.model.item.Item;
+
+import android.os.AsyncTask;
+import android.os.Handler;
+
+import fileStructure.Folder;
+import fileStructure.MediaObject;
+
+/**
+ * This class is used to access and use the functionality of the content directory service on dlna/upnp compatible media servers.
+ * @author kuszewskij
+ *
+ */
+public class ContentDirectoryService {
+
+	/**
+	 * This is the remote service on the server that is used to browser through the servers content directory
+	 */
+	private RemoteService browseService;
+
+	/**
+	 * This is the callback that is used to subscribe to the content directory service on the connected media server.
+	 */
+	private SubscriptionCallback callback;
+
+	/**
+	 * Used to indicate how many requests have been made and to identify each request.
+	 */
+	private static int request = 0;
+
+	/**
+	 * This ArrayList is used to hold all of the object segments that are created until they can be combined into a single media object 
+	 */
+	private ArrayList<ObjectSegment> objectSegments = new ArrayList<ObjectSegment>();
+
+	/**
+	 * This method will update the connected device to be browsed through.
+	 * @param connectedDevice
+	 */
+	public void setConnectedDevice(RemoteDevice connectedDevice){
+		ServiceId serviceId = new UDAServiceId("ContentDirectory");
+		browseService = connectedDevice.findService(serviceId);
+		System.out.println("Setting new connected device in content directory service.////////////////////////////////////////////////////////");
+		callback = new SubscriptionCallback(browseService, 600) { // Timeout in seconds
+
+			@Override
+			public void established(GENASubscription sub) {
+				System.out.println("Established: " + sub.getSubscriptionId());
+			}
+
+			@Override
+			public void eventReceived(GENASubscription sub) {
+
+				System.out.println("Event: " + sub.getCurrentSequence().getValue());
+				Map<String, StateVariableValue> values = sub.getCurrentValues();
+				StateVariableValue status = values.get("Status");
+				if(status != null){
+				System.out.println("Status is: " + status.toString());
+				}else{
+					System.out.println("Status was null.");
+				}
+			}
+
+			@Override
+			public void eventsMissed(GENASubscription sub, int numberOfMissedEvents) {
+				System.out.println("Missed events: " + numberOfMissedEvents);
+			}
+
+			@Override
+			protected void ended(GENASubscription arg0, CancelReason arg1,
+					UpnpResponse arg2) {
+
+			}
+
+			@Override
+			protected void failed(GENASubscription arg0, UpnpResponse arg1,
+					Exception arg2, String arg3) {
+			}
+		};
+
+		NetworkManager.getNetworkManager().getUpnpService().getControlPoint().execute(callback);
+	}
+
+	/**
+	 * This method should be called when the current server is disconnected. It will nd the subscription to the server and stop listening for events from it.
+	 */
+	public void disconnect(){
+		if(callback != null){
+			callback.end();
+			callback = null;
+		}
+
+		if(browseService != null){
+			browseService = null;
+		}
+	}
+
+	/**
+	 * This is a helper method that will take an objects metadata and its children and create a media object that represents it.
+	 * @param metadata
+	 * @param children
+	 * @return
+	 */
+	private MediaObject createMediaObject(DIDLContent metadata, DIDLContent children){
+		MediaObject mo = null;
+		//a folder is being made
+		if(metadata.getContainers().size()==1){
+			Container c = metadata.getFirstContainer();
+			if(c.getClazz().getValue().equals("object.container.storageFolder")||c.getClazz().getValue().equals("object.container.person.musicArtist")){
+				mo = new Folder((StorageFolder) c, children);
+				System.out.println("Created Storage Folder");
+			}
+		}
+		
+		//a non folder media object is being made
+		if(metadata.getItems().size() == 1){
+			Item i = metadata.getItems().get(0);
+			mo = MediaObject.createMediaObject(i);
+		}
+		
+		return mo;
+	}
+
+	/**
+	 * This method will retrieve the requested media object on the connected media server. The media object that was retrieved will be returned through
+	 * the passed in ContentDirectoryCallback's callback method.
+	 * @param objectID The object id of the media object to retrieve. Use 0 for the root directory.
+	 * @param cdc The ContentDirectoryCallback that will receive the the requested media object.
+	 * @throws Exception Throws if a device is not currently connected.
+	 */
+	public void getMediaObjectFromServer(String objectID, final ContentDirectoryCallback cdc) throws Exception{
+		if(callback == null || browseService == null){
+			throw new Exception("The content directory service does not have a connected device.");
+		}
+		browse(objectID, cdc,request,BrowseFlag.DIRECT_CHILDREN);
+		browse(objectID, cdc,request,BrowseFlag.METADATA);
+		request++;
+	}
+	
+	private void search(String objectID, final ContentDirectoryCallback cdc, final int requestNum, final BrowseFlag mode) throws Exception{
+		
+		//Browse action = new Browse()
+	}
+
+	/**
+	 * Helper method used by this class to create and execute a browse action on the connected media server.
+	 * @param objectID
+	 * @param cdc
+	 * @param requestNum
+	 * @param mode
+	 * @throws Exception
+	 */
+	private void browse(String objectID, final ContentDirectoryCallback cdc, final int requestNum, final BrowseFlag mode) throws Exception{
+		Browse action = new Browse(browseService, objectID,mode){
+
+			@Override
+			public void received(ActionInvocation arg0, DIDLContent didl) {
+				System.out.println("Receieved from browse: "+mode.name());
+				segmentRecieved(new ObjectSegment(cdc, mode, didl, requestNum));
+
+			}
+
+			@Override
+			public void updateStatus(Status arg0) {
+				//Unused
+			}
+
+			/**
+			 * This method is called by the browse action whenever an error occurs.
+			 */
+			@Override
+			public void failure(ActionInvocation arg0, UpnpResponse arg1,
+					String arg2) {
+				System.err.println(arg0.getAction().getName());
+				arg0.getFailure().printStackTrace();
+				System.err.println(arg2);
+			}
+
+		};
+		//execute the browse action
+		NetworkManager.getNetworkManager().getUpnpService().getControlPoint().execute(action);
+	}
+
+	/**
+	 * This method is called once an ObjectSegment is received from a browse action. It will check to see if
+	 * both parts of the request have been obtained and will then create a media object and pass the data off to the 
+	 * ContentDirectoryCallback.
+	 * @param os The ObjectSegment that was just received
+	 */
+	private synchronized void segmentRecieved(ObjectSegment os){
+		boolean matched = false;//indicates if the segment has been matched with its other half.
+		
+		//go through each segment and see if the other half has been received yet.
+		for(ObjectSegment os2: objectSegments){
+			if(os2.requestNumber == os.requestNumber){
+				DIDLContent meta = os.didl;
+				DIDLContent child = os2.didl;
+				if(os.type.equals(BrowseFlag.DIRECT_CHILDREN)){
+					meta = os2.didl;
+					child = os.didl;
+				}
+				MediaObject mo = createMediaObject(meta, child);
+				
+				//give object to call back
+				System.out.println("os: "+os);
+				System.out.println("cdc: "+os.cdc);
+				
+				os.cdc.mediaObjectRecieved(mo);
+				
+				//cleanup
+				objectSegments.remove(os2);//remove the stored half of the returned object
+				matched = true;//it has been matched
+				break;//there will only be one other half so no need to keep searching.
+			}
+		}
+		
+		if(!matched){//if its not matched yet then keep it until it is.
+			objectSegments.add(os);
+		}
+	}
+
+	/**
+	 * This class is used to maintain the different parts of a requested media object. Since the meta data and the objects children will need to be returned separately 
+	 * there needs to be some way to hold onto the different parts of the object so that once both the meta data and the children are returned the entire object can be returned
+	 * at once without needing to block any threads.
+	 * @author kuszewskij
+	 *
+	 */
+	private class ObjectSegment{
+
+		/**
+		 * This is the original Callback that requested the object
+		 */
+		private ContentDirectoryCallback cdc;
+
+		/**
+		 * This indicates if the segment is meta data or children. can be either METADATA or DIRECT_CHILDREN
+		 */
+		private BrowseFlag type;
+
+		/**
+		 * This is the data of the segment, either the meta data or the children.
+		 */
+		private DIDLContent didl;
+
+		/**
+		 * The request number identifying which object is being created.
+		 */
+		private int requestNumber;
+
+		/**
+		 * Simple constructor for this Object segment
+		 * @param cdc The original Callback that requested the object
+		 * @param type METADATA or DIRECT_CHILDREN
+		 * @param didl The data of the segment, either the meta data or the children.
+		 */
+		private ObjectSegment(ContentDirectoryCallback cdc, BrowseFlag type, DIDLContent didl, int requestNumber){
+			this.cdc = cdc;
+			this.type = type;
+			this.didl = didl;
+			this.requestNumber = requestNumber;
+		}
+	}
+}

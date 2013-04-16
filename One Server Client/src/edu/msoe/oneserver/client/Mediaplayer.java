@@ -1,0 +1,251 @@
+package edu.msoe.oneserver.client;
+
+import java.io.IOException;
+
+import com.media.ffmpeg.FFMpeg;
+import com.media.ffmpeg.FFMpegException;
+import com.media.ffmpeg.FFMpegPlayer;
+import com.media.ffmpeg.android.FFMpegMovieViewAndroid;
+
+import cz.havlena.ffmpeg.ui.FFMpegMessageBox;
+
+import edu.msoe.oneserver.client.R;
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.View;
+import android.view.SurfaceHolder.Callback;
+import android.view.SurfaceView;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.Toast;
+
+public class Mediaplayer extends Activity /*implements Callback*/{
+	
+	private static final String TAG = "MediaplayerActivity";
+
+	//SurfaceView sv;
+
+	//MediaPlayer mo;
+
+	//SurfaceHolder sh;
+
+	//boolean paused = false;
+
+	//boolean stopped = false;
+
+	/**
+	 * Use this key to place the URI path into the bundle when starting this activity.
+	 */
+	public final static String URI_KEY = "URI_KEY";
+
+	Uri target;
+	
+	//private Bitmap mBitmap;
+	
+	//private int mSecs;
+	
+	private FFMpegMovieViewAndroid moviePlayer;
+	
+//	private static native void openFile();
+//	private static native void drawFrame(Bitmap bitmap);
+//	private static native void drawFrameAt(Bitmap bitmap, int secs);
+//	
+//	static {
+//		System.loadLibrary("libvideokit.so");
+//	}	
+	
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		//setContentView(R.layout.media_player);
+
+		//sv = (SurfaceView)findViewById(R.id.mediaController);
+
+		//sh = sv.getHolder();
+
+		//sh.addCallback(this);
+
+		//mo = new MediaPlayer();
+
+		Bundle extras = getIntent().getExtras();
+		//see if any extras were passed in. 
+		if(extras != null){
+			target = Uri.parse((String) getIntent().getExtras().get(URI_KEY));
+			try{
+				FFMpeg ffmpeg = new FFMpeg();
+				moviePlayer = ffmpeg.getMovieView(this);
+				try{
+					moviePlayer.setVideoPath(target.toString());
+				}catch(IllegalArgumentException e){
+					Log.e(TAG, "Can't set video: " + e.getMessage());
+					FFMpegMessageBox.show(this, e);
+				}catch(IllegalStateException e){
+					Log.e(TAG, "Can't set video: " + e.getMessage());
+					FFMpegMessageBox.show(this, e);
+				}catch(IOException e){
+					Log.e(TAG, "Can't set video: " + e.getMessage());
+					FFMpegMessageBox.show(this, e);
+				}
+				setContentView(moviePlayer);
+			}catch(FFMpegException e) {
+				Log.d(TAG, "Error when inicializing ffmpeg: " + e.getMessage());
+				FFMpegMessageBox.show(this, e);
+				
+			}
+		}else{
+			Log.d(TAG, "Not specified video file");
+		}
+
+//		Button play = (Button)findViewById(R.id.button_play);
+//		play.setOnClickListener(new OnClickListener() {
+//
+//			public void onClick(View v) {
+//				start();
+//			}
+//		});
+//
+//		Button pause = (Button)findViewById(R.id.button_pause);
+//		pause.setOnClickListener(new OnClickListener() {
+//
+//			public void onClick(View v) {
+//				pause();
+//			}
+//		});
+//
+//		Button stop = (Button)findViewById(R.id.button_stop);
+//		stop.setOnClickListener(new OnClickListener() {
+//
+//			public void onClick(View v) {
+//				stop();
+//			}
+//		});
+	}
+
+//	@Override
+//	protected void onDestroy() {
+//		super.onDestroy();
+//		if(mo != null){
+//			mo.release();
+//		}
+//	}
+
+	//	@Override
+	//	public boolean onCreateOptionsMenu(Menu menu){
+	//		getMenuInflator(R.menu.media_player);
+	//	}
+
+//	public boolean canPause() {
+//		return !paused;
+//	}
+//
+//	public boolean canSeekBackward() {
+//		// TODO Need to get this integrated in.
+//		return false;
+//	}
+//
+//	public boolean canSeekForward() {
+//		// TODO Need to get this integrated in.
+//		return false;
+//	}
+//
+//	public int getBufferPercentage() {
+//		// TODO Need to figure out how this works.
+//		return 0;
+//	}
+//
+//	public int getCurrentPosition() {
+//		if(mo != null){
+//			return mo.getCurrentPosition();
+//		}
+//		return 0;
+//	}
+//
+//	public int getDuration() {
+//		if(mo != null) {
+//			mo.getDuration();
+//		}
+//		return 0;
+//	}
+//
+//	public boolean isPlaying() {
+//		if(mo != null) {
+//			return mo.isPlaying();
+//		}
+//		return false;
+//	}
+//
+//	public void pause() {
+//		if(paused == true){
+//			paused = false;
+//			mo.start();
+//		}else if(paused == false){
+//			paused = true;
+//			mo.pause();
+//		}
+//	}
+//
+//	public void stop() {
+//		mo.stop();
+//		mo.release();
+//		stopped = true;
+//	}
+//
+//	public void seekTo(int pos) {
+//		if(mo != null) {
+//			mo.seekTo(pos);
+//		}
+//	}
+//
+//	public void start() {
+//		if(isPlaying() || stopped) {
+//			mo.reset();
+//		}
+//
+//		stopped = false;
+//		paused = false;
+//
+//		mo.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//		//setVolumeControlStream(AudioManager.STREAM_MUSIC);
+//		mo.setDisplay(sh);
+//
+//		try{
+//			mo.setDataSource(this.getBaseContext(), target);
+//			mo.setLooping(false);
+//			mo.prepare();
+//			
+//		}catch (IllegalArgumentException e) {
+//			Toast.makeText(this.getApplicationContext(), "Error Illegal Arument Exception in the Start() method in Media Player", Toast.LENGTH_LONG).show();
+//		}catch (IllegalStateException e) {
+//			Toast.makeText(this.getApplicationContext(), "Error Illegal State Exception in the Start() method in Media Player", Toast.LENGTH_LONG).show();
+//		}catch (IOException e) {
+//			Toast.makeText(this.getApplicationContext(), "Error IO Exception in the Start() method in Media Player", Toast.LENGTH_LONG).show();
+//		}
+//
+//		mo.start();
+//	}
+//
+//	public void surfaceChanged(SurfaceHolder holder, int format, int width,
+//			int height) {
+//		// TODO Auto-generated method stub
+//
+//	}
+//
+//	public void surfaceCreated(SurfaceHolder holder) {
+//		// TODO Auto-generated method stub
+//
+//	}
+//
+//	public void surfaceDestroyed(SurfaceHolder holder) {
+//		// TODO Auto-generated method stub
+//
+//	}
+
+}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/main_screen_browse_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="buttonClicked"
+        android:text="@string/main_menu_browse_button" />
+
+    <Button
+        android:id="@+id/main_screen_search_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/main_menu_search_button" />
+
+    <Button
+        android:id="@+id/main_screen_connect_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="buttonClicked"
+        android:text="@string/main_menu_connect_button" />
+
+    <Button
+        android:id="@+id/main_screen_synch_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="buttonClicked"
+        android:text="@string/main_menu_synch_button" />
+
+</LinearLayout>
